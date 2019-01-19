@@ -1,0 +1,70 @@
+Rules for "For Sale" Board Game
+
+0. Each $1 means $1K in expression, but same as 1point.
+
+1. Elements
+> Score 1~30 Estate Card (Each 1, total 30 cards)
+> Money $0~$15 Card (No $1, Each 2, total 30 cards)
+> Token for start money : $2, $1. Each user get $2 * 2 + $1 * 14 = $18.
+
+2. Different by person [3 Players~6 Players]
+3 Players = Remove random 6 cards from score and money - total 24 cards, 8 turns
+4 Players = Remove random 2 cards from score and money - total 28 cards, 7 turns
+5 Players = Remove no cards - total 30 cards, 6 turns
+6 Players = Remove no cards - total 30 cards, 5 turns
+
+3. Procedure
+3-1. Part I - Bid and Buy for Estate cards
+	A. Randomly open estate cards as same as amount of players.
+	B. Player bids in order. (Begin from young, CW direction in handbook)
+		B-1 : 시작 순서는 여러가지 룰로 정할 수 있다. CW/CCW도 되고, 번갈아가면서 첫번째 턴을 먹어도 되고, 지난 라운드에서 최고가 입찰 성공한 사람이 첫번째 턴을 잡는 룰도 가능하다.
+	C. Each player can bid(이때 입찰가는 이전 기록보다 높아야 함) or abandon. Repeat until last one stand.
+		C-1. Abandon case - Return half of own bid price and get lowest-score estate card.
+		C-2. Last stand person - Pay all own bid price and get last(=highest-score) estate card.
+	D. Repeat A~C until all estate cards are sold.
+	E. Left token money after Part I will joined to money on Part III scoring.
+3-2. Part II - Sell estate to cash.
+	A. Randomly open money cards as same as amount of players.
+	B. Player pick estate cards and submit with hidden state.
+	C. Open all submitted estate cards in a same time.
+	D. Person who submitted n-th highest value estate card will obtain n-th highest value money card.
+	E. Repeat A~D until all money card are sold
+3-3. Part III - Scoring
+	A. Sum of values on money card and left token money from Part I become score.
+	B. Who have most money in game win.
+	
+4. Protocol
+Player가 response()로 넘기는 숫자는 3-1에서는 추가 bid 금액, 3-2에서는 낼 카드 value이다. 카드 value에 해당하는게 없으면 retry.
+
+
+TBD
+- Player.response()에서 응답 verify. 이후 서버/클라이언트 쪼개면 서버쪽에서 (Game.turn_estate()) verify 한번더
+- Verify 부분을 함수 하나로 묶기
+
+TODO :
+bet 부분 제대로 구현하기 - bet 호출시 자기가 특정 값으로 bet하기.
+
+이걸 Player의 response를 받고 서버에서 Verify(이거 Player에서 Verify하면 안됨)
+
+이 부분 로직을 다시 정리해야 - Player -> Server -> Verify, 여기서 막히면 다시 서버가 Player를 호출해야함.
+이때 치팅 막으려면 소지금을 Player가 아니라 Server가 들고 있어야하는가?
+
+Answer - Player != Client. Client용은 따로 만들어야함
+
+Verify 오류시 Alert - Crash 구조가 아니라.... Recovery 구조로 또 수정필요
+
+AI는 Player 클래스에 들어가야함.
+
+(pid, player)도 어딘가 저장해야하고
+
+에러 리스트들
+#1 - OverPay, Player.die() - 잔고 이상의 Pay할때
+	> 출력 : pid, balance, pay
+	> 복구 : pay = balance라 가정하고, 남은 돈 0
+#2 - BetError, Player.bet() - bet한 값이 적절한 값으로 들어오지 않고 잔고보다 높거나 기존 값보다 낮은 경우
+	> 출력 : pid, bet, amount, balance
+	> 복구 : 기존 값보다 낮으면 die(), 잔고보다 높으면 잔고만큼 bet
+#3, #4 - OverBet, UnderBet, Player.turn() - response가 적합한 값이 아닌 경우
+	> 출력 : pid, balance, resp
+#5 - WrongCodeSTE, Server.turn_estate() - Wrong Code가 player.turn()에서 들어온 경우
+	> 출력 : gid, pid, wrong_code & 강제종료.
