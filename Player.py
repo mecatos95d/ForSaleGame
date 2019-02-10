@@ -15,6 +15,9 @@ class Player:
 		self.__bet__ = 0 # Amount of bet
 		self.__isAI__ = (None == name) 
 	
+	def get_el(self):
+		return len(self.__estate__)
+	
 	def get_response(self, min = 0): # From Client, minimum is 
 		if min > self.__balance__:
 			return 0 # Cannot-bet-case
