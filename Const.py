@@ -9,3 +9,8 @@ gid = 1
 
 # Debug Print Option
 DPO = True
+
+# Initial balance
+def getPIB():
+	return 13
+PIB = getPIB()

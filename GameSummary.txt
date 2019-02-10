@@ -57,14 +57,22 @@ AI는 Player 클래스에 들어가야함.
 
 (pid, player)도 어딘가 저장해야하고
 
+TODO 2 - 카드를 Player로 넘길때 Verify -> Game측에서 해야할듯 아마(Player, Client로 전체 카드 리스트 전송하기 어려움)
+
+TIP - Uniqueness는 Set으로 전환을 통해서 알 수 있다.
+
+Player.turn()에서 잘 생각하면 cur_bet(현재 보드 내 베팅값)은 항상 self.__bet__(자기 자신의 베팅값)보다 크거나 같다.
+
 에러 리스트들
 #1 - OverPay, Player.die() - 잔고 이상의 Pay할때
 	> 출력 : pid, balance, pay
 	> 복구 : pay = balance라 가정하고, 남은 돈 0
 #2 - BetError, Player.bet() - bet한 값이 적절한 값으로 들어오지 않고 잔고보다 높거나 기존 값보다 낮은 경우
-	> 출력 : pid, bet, amount, balance
-	> 복구 : 기존 값보다 낮으면 die(), 잔고보다 높으면 잔고만큼 bet
+	> 출력 : pid, bet, prev, amount, balance
+	> 복구 : 최대치만큼 bet, 하지만 prev보다 낮으면(=bet 애초에 불가능) die호출
 #3, #4 - OverBet, UnderBet, Player.turn() - response가 적합한 값이 아닌 경우
-	> 출력 : pid, balance, resp
+	> 출력 : pid, balance, resp, cur_bet(판 내 베팅 수치, #4만 해당)
 #5 - WrongCodeSTE, Server.turn_estate() - Wrong Code가 player.turn()에서 들어온 경우
 	> 출력 : gid, pid, wrong_code & 강제종료.
+#6 - NonEmptyMarket, Server.tun_estate() - 카드 분배 이후 market에 남아 있는 경우.
+	> 출력 : gid, len(market), market_raw

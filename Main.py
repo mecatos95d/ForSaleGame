@@ -6,4 +6,3 @@ for i in range(6):
 
 print("len (players) =", len(players))
 test_game = Game(players)
-print(test_game.__gid__)

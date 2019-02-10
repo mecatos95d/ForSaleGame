@@ -11,44 +11,47 @@ class Player:
 		Const.pid += 1
 		self.__estate__ = [] # Deck for estate cards. Verify by "Game Turn" & "Deck Length"
 		self.__money__ = [] # Deck for money cards. Verify by "Game Turn" & "Deck Length"
-		self.__balance__ = 0 # Total balance
+		self.__balance__ = Const.PIB # Total balance
 		self.__bet__ = 0 # Amount of bet
 		self.__isAI__ = (None == name) 
 	
 	def get_response(self, min = 0): # From Client, minimum is 
-		return random.randrange(min, self.__balance__+1)
+		if min > self.__balance__:
+			return 0 # Cannot-bet-case
+		else:
+			return random.randrange(min, self.__balance__+1)
 	
-	def turn(self): # Processing Turn
+	def turn(self, cur_bet): # Processing Turn
+		# NOTE : 
 		retry = Const.RETRY_CNT # Retry maximum - Wait for Client.
-		while retry > 0: # Wait until 
-			resp = self.get_response()
+		while retry > 0: # Wait until
+			resp = self.get_response(cur_bet+1)
 		
-			if 0 == resp: # Die
-				self.die()
-				return 1
+			if 0 == resp: # Die signal
+				return 0
 			
-			elif player.__balance__ < resp: # OverBet
-				print("Error #3 OverBet : ", player.pid, player.__balance__, resp)
-			elif player.__bet__ >= resp: # UnderBet
-				print("Error #4 UnderBet : ", player.pid, player.__balance__, resp)
+			elif self.__balance__ < resp: # OverBet
+				print("Error #3 OverBet : ", self.pid, self.__balance__, resp)
+			elif cur_bet >= resp: # UnderBet
+				print("Error #4 UnderBet : ", self.pid, self.__balance__, resp, cur_bet)
 			
 			else: # New bet
-				self.bet(resp)
-				return 2
+				self.bet(resp, cur_bet)
+				return resp
 				
 			retry -= 1
 		# Retry Chance Over
-		self.die()
-		return 1
+		return 0
 	
-	def bet(self, amount):
-		if self.__balance__ >= amount and self.__bet__ < amount:
+	def bet(self, amount, prev):
+		if self.__balance__ >= amount and prev < amount:
 			self.__bet__ = amount
 		else:
-			print("Error #2 BetError : ", self.pid, self.__bet__, amount, self.__balance__)
+			print("Error #2 BetError : ", self.pid, self.__bet__, prev, amount, self.__balance__)
 			self.__bet__ = self.__balance__
+		print("   > BET,", prev, "->", self.__bet__, "/", self.__balance__)
 	
-	def die(self, last = False):
+	def die(self, card, last = False):
 		if last:
 			gain = 0
 		else:
@@ -62,3 +65,11 @@ class Player:
 			print("Error #1 OverPay : ", self.pid, self.__balance__, pay)
 			self.__balance__ = 0 # Recovery
 		
+		self.__estate__.append(card)
+		print("   > DIED, bought estate", card.value, "by pay", pay, "and gain", gain, "| balance", self.__balance__)
+	
+	def print_estate(self):
+		print("Player", self.pid, "has...")
+		self.__estate__.sort()
+		for card in self.__estate__:
+			print("   > Estate", card.value)
