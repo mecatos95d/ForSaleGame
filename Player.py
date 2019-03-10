@@ -5,30 +5,59 @@ import random
 class Player:
 	def __init__(self, name=None):
 		self.name = name
-		if None == self.name:
-			self.name = "Player" + str(Const.pid)
+		if self.name is None:
+			self.name = "Player #" + str(Const.pid)
 		self.pid = Const.pid
 		Const.pid += 1
 		self.__estate__ = [] # Deck for estate cards. Verify by "Game Turn" & "Deck Length"
 		self.__money__ = [] # Deck for money cards. Verify by "Game Turn" & "Deck Length"
 		self.__balance__ = Const.PIB # Total balance
 		self.__bet__ = 0 # Amount of bet
-		self.__isAI__ = (None == name) 
+		self.__isAI__ = (name is None) 
 	
-	def get_el(self):
-		return len(self.__estate__)
+	def __repr__(self):
+		rp = "[ Player Name = " + str(self.name)
+		rp += " | Estate #" + str(len(self.__estate__))
+		rp += " | Money #" + str(len(self.__money__))
+		rp += " | Balance = " + str(self.__balance__)
+		rp += " ]"
+		return rp
+		
+	def __lt__(self, other):
+		return self.__balance__ < other.__balance__
 	
-	def get_response(self, min = 0): # From Client, minimum is 
-		if min > self.__balance__:
-			return 0 # Cannot-bet-case
+	def verify(self, spes, spms):
+		clear = True
+		if len(self.__estate__) != spes:
+			print("Critical error : Improper estate container,", self.name, spes, "!=", len(self.__estate__))
+		if len(self.__money__) != spms:
+			print("Critical error : Improper money container,", self.name, spms, "!=", len(self.__money__))
+		for card in self.__estate__:
+			clear &= card.verify(self)
+		for card in self.__money__:
+			clear &= card.verify(self)
+		return clear
+	
+	def get_response(self, mode, min = 0): # mode = 0 (estate) or 1 (money)
+		if 0 == mode:
+			if min > self.__balance__:
+				return 0 # Cannot-bet-case
+			else:
+				return random.randrange(min, self.__balance__+1)
+		elif 1 == mode:
+			pick = random.choice(self.__estate__)
+			pick.release(self) # Verify at here.
+			self.__estate__.remove(pick)
+			return pick
 		else:
-			return random.randrange(min, self.__balance__+1)
+			print("Error #G0201 Wrong_Verify_Mode : ", self.pid, turn, mode)
+			return -1
 	
-	def turn(self, cur_bet): # Processing Turn
+	def turn_estate(self, cur_bet): # Processing Turn Estate
 		# NOTE : 
 		retry = Const.RETRY_CNT # Retry maximum - Wait for Client.
 		while retry > 0: # Wait until
-			resp = self.get_response(cur_bet+1)
+			resp = self.get_response(0, cur_bet+1)
 		
 			if 0 == resp: # Die signal
 				return 0
@@ -46,13 +75,16 @@ class Player:
 		# Retry Chance Over
 		return 0
 	
+	def turn_money(self): # Processing Turn Money
+		return self.get_response(1)
+
 	def bet(self, amount, prev):
 		if self.__balance__ >= amount and prev < amount:
 			self.__bet__ = amount
 		else:
 			print("Error #2 BetError : ", self.pid, self.__bet__, prev, amount, self.__balance__)
 			self.__bet__ = self.__balance__
-		print("   > BET,", prev, "->", self.__bet__, "/", self.__balance__)
+		print("BET,", prev, "->", self.__bet__, "/", self.__balance__)
 	
 	def die(self, card, last = False):
 		if last:
@@ -69,7 +101,8 @@ class Player:
 			self.__balance__ = 0 # Recovery
 		
 		self.__estate__.append(card)
-		print("   > DIED, bought estate", card.value, "by pay", pay, "and gain", gain, "| balance", self.__balance__)
+		card.set_owner(self)
+		print("DIED, bought estate", card.value, "by pay", pay, "and gain", gain, "| balance", self.__balance__)
 	
 	def print_estate(self):
 		print("Player", self.pid, "has...")

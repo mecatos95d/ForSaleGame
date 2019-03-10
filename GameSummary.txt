@@ -63,6 +63,8 @@ TIP - Uniqueness는 Set으로 전환을 통해서 알 수 있다.
 
 Player.turn()에서 잘 생각하면 cur_bet(현재 보드 내 베팅값)은 항상 self.__bet__(자기 자신의 베팅값)보다 크거나 같다.
 
+players를 지금 sort하는데 이건 Game을 반복시 문제 생김.
+
 에러 리스트들
 #1 - OverPay, Player.die() - 잔고 이상의 Pay할때
 	> 출력 : pid, balance, pay
@@ -73,14 +75,31 @@ Player.turn()에서 잘 생각하면 cur_bet(현재 보드 내 베팅값)은 항
 #3, #4 - OverBet, UnderBet, Player.turn() - response가 적합한 값이 아닌 경우
 	> 출력 : pid, balance, resp, cur_bet(판 내 베팅 수치, #4만 해당)
 #5 - WrongCodeSTE, Game.turn_estate() - Wrong Code가 player.turn()에서 들어온 경우
-	> 출력 : gid, pid, wrong_code & 강제종료.
+	> 출력 : gid, name, pid, wrong_code & 강제종료.
 #6 - NonEmptyMarket, Game.tun_estate() - 카드 분배 이후 market에 남아 있는 경우.
 	> 출력 : gid, len(market), market_raw
 
 에러 리스트들 (규칙할당) - [구조체 1자리 + 함수 2자리 + 에러 2자리]
 G - Game @ Server.py
-	01 - mid_turn_verify()
+	DEPRECATED! 01 - mid_turn_verify()
+	02 - verify()
 P - Player @ Player.py
-C - Card @ Card.py (거의 안씀)
-#G0101 - WrongEstateSize - 중간 정산에서 Estate의 수가 맞지 않을 때
-	> 출력 : gid, 에러 대상 pid(게임측 에러는 -1)
+C - Card @ Card.py
+	02 - set_owner()
+	03 - release()
+	04 - verify()
+
+DEPRECATED! #G0101 - Wrong_Estate_Size - 중간 정산에서 Estate의 수가 맞지 않을 때
+DEPRECATED! 	> 출력 : gid, 에러 대상 pid(게임측 에러는 -1), 정상값, 현재값
+#G0201 - Wrong_Verify_Mode - Verify Mode가 할당값(0, 1)가 아닐때
+	> 출력 : gid, turn, mode
+
+#P0201 - Wrong_Response_Mode - Verify Mode가 할당값(0, 1)가 아닐때
+	> 출력 : gid, turn, mode
+
+#C0201 - Double_Card_Allocation - 카드 주인이 있는데 다른 사람에게 할당할때.
+	> 출력 : 카드 정보, 입력된 새 주인
+#C0301 - Wrong_Owner_Release - 주인이 아닌 다른 사람을 인증값으로 해서 카드를 반납할 때
+	> 출력 : 카드 정보, 입력된 주인
+#C0401 - Wrong_Owner_Verify - Verify시 주인이 다른 경우
+	> 출력 : 카드 정보, Verify 시도한 주인
